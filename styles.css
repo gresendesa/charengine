@@ -1,0 +1,40 @@
+body {
+    background-color: black;
+}
+#area b {
+ font-family: Courier, monospace;
+ font-size: 60px;
+ font-weight: normal;
+}
+
+
+
+
+/*
+A partir daqui os cores
+*/
+
+.cb {
+    color:white;
+    background-color: black;
+
+    /* IMPEDE QUE O USUÁRIO SELECIONE */
+    -webkit-user-select: none;  /* Chrome all / Safari all */
+    -moz-user-select: none;     /* Firefox all */
+    -ms-user-select: none;      /* IE 10+ */
+    user-select: none;          /* Likely future */
+
+    /* TRANSIÇÃO DE COR */
+    -o-transition:.7s;
+    -ms-transition:.7s;
+    -moz-transition:.7s;
+    -webkit-transition:.7s;
+    /* ...and now for the proper property */
+    transition:.7s;
+}
+
+.cb:hover {
+    color:white;
+    background-color: yellow;
+}
+
