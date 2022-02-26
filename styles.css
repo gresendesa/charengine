@@ -3,21 +3,12 @@ body {
 }
 #area b {
  font-family: Courier, monospace;
- font-size: 60px;
+ font-size: 17px;
  font-weight: normal;
 }
 
 
-
-
-/*
-A partir daqui os cores
-*/
-
-.cb {
-    color:white;
-    background-color: black;
-
+.cell {
     /* IMPEDE QUE O USUÁRIO SELECIONE */
     -webkit-user-select: none;  /* Chrome all / Safari all */
     -moz-user-select: none;     /* Firefox all */
@@ -33,8 +24,31 @@ A partir daqui os cores
     transition:.7s;
 }
 
-.cb:hover {
-    color:white;
+.cell:hover {
     background-color: yellow;
+}
+
+/*
+A partir daqui os cores
+*/
+
+.red {
+    color: red;
+    background-color: green;
+}
+
+.white {
+    color:white;
+    background-color: green;
+}
+
+.blue {
+    color:blue;
+    background-color: green;
+}
+
+.null {
+    color:gray;
+    background-color: black;
 }
 
