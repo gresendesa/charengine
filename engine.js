@@ -17,6 +17,56 @@ class Character {
 	}
 }
 
+
+/**
+ * Cell
+ * 
+ * @description this is a set that links character, DOMElement, and coordinates
+ * 	inside a Frame
+ */
+
+class Cell {
+	constructor(frame, character, frameLine, frameColumn){
+		this.frame = frame
+		this.character = character
+		this.frameLine = frameLine
+		this.frameColumn = frameColumn
+		let elementNode = document.createElement('b');
+		let textNode = document.createTextNode(character.char)
+		elementNode.classList.add('cell')
+		character.classes.forEach(className => {
+			elementNode.classList.add(className) 
+		})
+		elementNode.appendChild(textNode)
+		this.domElement = elementNode
+		this.configureListeners()
+	}
+
+	getDOMElement(){
+		return this.domElement
+	}
+
+	configureListeners(){
+		this.domElement.addEventListener('mousedown', e => {
+			let chunkLine = this.frame.chunkLine + this.frameLine
+			let chunkColumn = this.frame.chunkColumn + this.frameColumn
+			console.log(`CHUNK[line=${chunkLine}, column=${chunkColumn}] FRAME[line=${this.frameLine},column=${this.frameColumn}]`)
+		})
+
+		/*this.domElement.addEventListener('mouseover', e => {
+			let chunkLine = this.frame.chunkLine + this.frameLine
+			let chunkColumn = this.frame.chunkColumn + this.frameColumn
+			//console.log(`CHUNK[line=${chunkLine}, column=${chunkColumn}] FRAME[line=${this.frameLine},column=${this.frameColumn}]`)
+		})*/
+	}
+
+	purge(){
+		this.domElement.remove()
+		//this.character.remove()
+	}
+
+}
+
 /**
  * Tile
  * 
@@ -45,13 +95,24 @@ class Tile {
 }
 
 /**
+ * Entity
+ * 
+ * @description is a description of a entity that lives it a tile
+ */
+
+class Entity {
+
+}
+
+/**
  * Chunk
  * 
  * @description chunk is a list of lines that carries
  * 	all the tiles in memory.
  */
 class Chunk {
-	constructor(height, width) {
+	constructor(game, height, width) {
+		this.game = game
 		this.height = height
 		this.width = width
 		this.grid = []
@@ -93,6 +154,8 @@ class Frame {
 		this.matrix = []
 		this.height = height
 		this.width = width
+		this.chunkLine = null
+		this.chunkColumn = null
 		this.area = document.getElementById('area')
 		this.tileDict = {}
 		this.tileDict[Tile.TYPES.EMPTY] = new Character(' ',['white'])
@@ -104,19 +167,8 @@ class Frame {
 		this.drawed = false
 	}
 
-	buildMatrixElement(domElement, character){
-		return { domElement, character }
-	}
-
-	createDOMElementFromCharacter(character){
-		let elementNode = document.createElement('b');
-		let textNode = document.createTextNode(character.char)
-		elementNode.classList.add('cell')
-		character.classes.forEach(className => {
-			elementNode.classList.add(className) 
-		})
-		elementNode.appendChild(textNode)
-		return elementNode
+	getCharacterTile(tile){
+		return this.tileDict[tile.type]
 	}
 
 	update(chunkLine, chunkColumn){
@@ -126,18 +178,22 @@ class Frame {
 			return;
 		}
 
+		this.chunkLine = chunkLine
+		this.chunkColumn = chunkColumn
+
 		for (let line = chunkLine; line < chunkLine + this.height; line++) {
 			for (let column = chunkColumn; column < chunkColumn + this.width; column++) {
 				let gridLine = line - chunkLine;
 				let gridColumn = column - chunkColumn;
-				let chunkCharacter = this.tileDict[this.chunk.getTile(line,column).type]
-				const matrixElement = this.matrix[gridLine][gridColumn]
-				if(!matrixElement.character.isEqual(chunkCharacter)){
-					let newElementNode = this.createDOMElementFromCharacter(chunkCharacter)
-					let lastElementNode = matrixElement.domElement
+				let chunkCharacter = this.getCharacterTile(this.chunk.getTile(line,column))
+				let currentCell = this.matrix[gridLine][gridColumn]
+				if(!currentCell.character.isEqual(chunkCharacter)){
+					let cell = new Cell(this, chunkCharacter, gridLine, gridColumn)
+					let newElementNode = cell.getDOMElement()
+					let lastElementNode = currentCell.getDOMElement()
 					lastElementNode.parentNode.replaceChild(newElementNode, lastElementNode)
-					lastElementNode.remove()
-					this.matrix[gridLine][gridColumn] = this.buildMatrixElement(newElementNode, chunkCharacter)
+					currentCell.purge()
+					this.matrix[gridLine][gridColumn] = cell
 				}
 			}	
 		}
@@ -150,22 +206,23 @@ class Frame {
 			return;
 		}
 
+		this.chunkLine = chunkLine
+		this.chunkColumn = chunkColumn
+
 		for (let line = chunkLine; line < chunkLine + this.height; line++) {
-			const matrixLine = []
+			let matrixLine = []
 			for (let column = chunkColumn; column < chunkColumn + this.width; column++) {
-
-				let chunkCharacter = this.tileDict[this.chunk.getTile(line,column).type]
-
-				let elementNode = this.createDOMElementFromCharacter(chunkCharacter)
+				let chunkCharacter = this.getCharacterTile(this.chunk.getTile(line,column))
+				let cell = new Cell(this, chunkCharacter, line - chunkLine, column - chunkColumn)
+				let elementNode = cell.getDOMElement()
 				this.area.appendChild(elementNode)
-				matrixLine.push(this.buildMatrixElement(elementNode, chunkCharacter))
-
+				matrixLine.push(cell)
 			}
 			let breakLine = document.createTextNode('\n')
 			this.area.appendChild(breakLine)
 			this.matrix.push(matrixLine)
 		}
-
+		
 		this.drawed = true
 
 	}
@@ -179,20 +236,14 @@ class Game {
 
 	constructor(){
 
-		this.chunkHeight = 7
-		this.chunkWidth = 17
-		this.frameHeight = 33
-		this.frameWidth = 130
-		this.frameLinePosition = -10  
-		this.frameColumnPosition = -50
+		this.chunkHeight = 500
+		this.chunkWidth = 500
+		this.frameHeight = 10
+		this.frameWidth = 40
+		this.frameLineAnchor = 0  
+		this.frameColumnAnchor = 0
 
-		this.chunk = new Chunk(this.chunkHeight, this.chunkWidth)
-		this.chunk.updateTile(0, 0, 'b')
-		this.chunk.updateTile(7, 4, 'x')
-		this.chunk.updateTile(5, 2, 'b')
-		this.chunk.updateTile(10, 7, 'x')
-		this.chunk.updateTile(5, 25, 'x')
-
+		this.chunk = new Chunk(this, this.chunkHeight, this.chunkWidth)
 		for (let i = 0; i < this.chunkHeight; i++) {
 			for (let j = 0; j < this.chunkWidth; j++) {
 				//this.chunk.updateTile(i, j, 'x')
@@ -219,34 +270,33 @@ class Game {
 	}
 
 	start(){
-		this.frame.draw(this.frameLinePosition, this.frameColumnPosition)
-		var contador0 = this.frameLinePosition
-		var contador1 = this.frameColumnPosition
+		this.frame.draw(this.frameLineAnchor, this.frameColumnAnchor)
 		setInterval(() => {
-			let lineOffset = Math.floor(Math.random() * 3)
-			let columnOffset = Math.floor(Math.random() * 3)
-			switch (lineOffset) {
-				case 1:
-					contador0 += 1
-					break;
-				case 2:
-					contador0 -= 1
-					break;
-				default:
-					break;
-			}
-			switch (columnOffset) {
-				case 1:
-					contador1 += 1
-					break;
-				case 2:
-					contador1 -= 1
-					break;
-				default:
-					break;
-			}
-			this.frame.update(contador0, contador1)
+			this.mainLoop()
 		},100)
+
+		document.addEventListener('keydown', e => {
+			e.preventDefault()
+			switch (e.key) {
+				case "ArrowLeft":
+					this.frameColumnAnchor -= 1
+					break;
+				case "ArrowRight":
+					this.frameColumnAnchor += 1
+					break;
+				case "ArrowUp":
+					this.frameLineAnchor -= 1
+					break;
+				case "ArrowDown":
+					this.frameLineAnchor += 1
+					break;
+			}
+		})
+
+	}
+
+	mainLoop(){
+		this.frame.update(this.frameLineAnchor, this.frameColumnAnchor)
 	}
 }
 
