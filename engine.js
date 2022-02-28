@@ -270,11 +270,11 @@ class Frame {
 		this.tileDict = {}
 		this.tileDict[Tile.TYPES.EMPTY] = new Character(' ',['white', 'bg-green'])
 		this.tileDict[Tile.TYPES.NULL] = new Character('?',['null'])
-		this.tileDict['b'] = new Character('☻',['blue', 'bg-green'])
+		this.tileDict['b'] = new Character('\u263C',['blue', 'bg-green'])
 		this.tileDict['c'] = new Character('-',['white', 'bg-green'])
 		this.tileDict['g'] = new Character('*',['white', 'bg-green'])
 		this.tileDict['x'] = new Character('♥',['red', 'bg-green'])
-		this.tileDict['e'] = new Character('☻',['entity'])
+		this.tileDict['e'] = new Character('\u263B',['entity'])
 		this.drawed = false
 	}
 
@@ -386,7 +386,7 @@ class Game {
 				//this.chunk.updateTile(i, j, 'x')
 				switch (Math.floor(Math.random() * 5)) {
 					case 1:
-						//this.chunk.updateTile(i, j, 'b')
+						this.chunk.updateTile(i, j, 'b')
 						break;
 					case 2:
 						//this.chunk.updateTile(i, j, 'c')
