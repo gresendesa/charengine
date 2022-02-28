@@ -50,7 +50,10 @@ class Cell {
 		this.domElement.addEventListener('mousedown', e => {
 			let chunkLine = this.frame.chunkLine + this.frameLine
 			let chunkColumn = this.frame.chunkColumn + this.frameColumn
-			console.log(`CHUNK[line=${chunkLine}, column=${chunkColumn}] FRAME[line=${this.frameLine},column=${this.frameColumn}]`)
+			this.frame.chunk.game.entities.forEach(e => {
+				e.setTarget(chunkLine, chunkColumn, 1000, 0)
+			})
+			//console.log(`CHUNK[line=${chunkLine}, column=${chunkColumn}] FRAME[line=${this.frameLine},column=${this.frameColumn}]`)
 		})
 
 		/*this.domElement.addEventListener('mouseover', e => {
@@ -112,22 +115,88 @@ class Tile {
  */
 
 class Entity {
-	constructor(name, type){
+	constructor(chunk, name, type, line, column){
 		this.name = name
 		this.type = type
-		this.tile = null
+		//this.tile = null
+		this.chunk = chunk
+		this.velocity = 0 //it may be something between 0 and 1000
+		this.acceleration = 0 //it may be something between 0 and 1000
+		this.assignToTile(line, column)
+		this.clearTarget()
+		this.counter = 0
 	}
 
 	updateType(type){
 		this.type = type
 	}
 
-	assignToTile(tile){
+	shouldItMove(){
+		if(!this.counter) {
+			this.counter += 1
+			return true
+		} 
+		if((this.velocity > 0) && (this.counter >= 1000/this.velocity)){
+			this.counter = 0
+			return false
+		}
+		this.counter += 1
+		return false
+	}
+
+	updatePosition(){
+		let { line, column, velocity, acceleration } = this.getTarget()
+		if((line != null) && (column != null) && (velocity > 0)){
+			let canMove = this.shouldItMove()
+			if(canMove) {
+				let diffTargetLine = this.targetLine - this.tile.line
+				let diffTargetColumn = this.targetColumn - this.tile.column
+				let moved = false
+				if((diffTargetLine != 0) || (diffTargetColumn != 0)){
+					let lineChange = 0;
+					let columnChange = 0;
+					if(diffTargetLine > 0) lineChange = 1;
+					if(diffTargetLine < 0) lineChange = -1;
+					if(diffTargetColumn > 0) columnChange = 1;
+					if(diffTargetColumn < 0) columnChange = -1;
+					moved = this.assignToTile(this.tile.line + lineChange, this.tile.column + columnChange)
+				}
+				if(!moved) this.clearTarget()
+			}
+		}
+	}
+
+	setTarget(line, column, velocity, acceleration){
+		this.targetLine = line
+		this.targetColumn = column
+		this.velocity = velocity
+		this.acceleration = acceleration
+	}
+
+	getTarget(){
+		return {
+			line: this.targetLine,
+			column: this.targetColumn,
+			velocity: this.velocity,
+			acceleration: this.acceleration
+		}
+	}
+
+	clearTarget(){
+		this.targetLine = null
+		this.targetColumn = null
+		console.log('target clear')
+	}
+
+	assignToTile(line, column){
 		if(this.tile != null){
+			if(!this.tile.chunk.isPositionValid(line, column)) return false
 			this.tile.removeEntity(this)
 		}
+		let tile = this.chunk.getTile(line, column)
 		this.tile = tile
 		tile.pushEntity(this)
+		return true
 	}
 
 	destroy(){
@@ -155,6 +224,14 @@ class Chunk {
 			}
 			this.grid.push(line)
 		}
+	}
+
+	isPositionValid(line, column){
+		if(line < 0) return false
+		if(column < 0) return false
+		if(line > this.height - 1) return false
+		if(column > this.width - 1) return false
+		return true
 	}
 
 	updateTile(line, column, type){
@@ -197,7 +274,7 @@ class Frame {
 		this.tileDict['c'] = new Character('-',['white', 'bg-green'])
 		this.tileDict['g'] = new Character('*',['white', 'bg-green'])
 		this.tileDict['x'] = new Character('♥',['red', 'bg-green'])
-		this.tileDict['e'] = new Character('■',['entity'])
+		this.tileDict['e'] = new Character('☻',['entity'])
 		this.drawed = false
 	}
 
@@ -212,6 +289,14 @@ class Frame {
 			return customCharacter
 		}
 		return tileCharacter
+	}
+
+	getMatrixCell(line, column){
+		return this.matrix[line][column]
+	}
+
+	setMatrixCell(cell, line, column){
+		this.matrix[line][column] = cell
 	}
 
 	update(chunkLine, chunkColumn){
@@ -229,14 +314,14 @@ class Frame {
 				let gridLine = line - chunkLine;
 				let gridColumn = column - chunkColumn;
 				let chunkCharacter = this.getTileCharacter(this.chunk.getTile(line,column))
-				let currentCell = this.matrix[gridLine][gridColumn]
+				let currentCell = this.getMatrixCell(gridLine, gridColumn)
 				if(!currentCell.character.isEqual(chunkCharacter)){
 					let cell = new Cell(this, chunkCharacter, gridLine, gridColumn)
 					let newElementNode = cell.getDOMElement()
 					let lastElementNode = currentCell.getDOMElement()
 					lastElementNode.parentNode.replaceChild(newElementNode, lastElementNode)
 					currentCell.purge()
-					this.matrix[gridLine][gridColumn] = cell
+					this.setMatrixCell(cell, gridLine, gridColumn)
 				}
 			}	
 		}
@@ -279,12 +364,20 @@ class Game {
 
 	constructor(){
 
-		this.chunkHeight = 20
-		this.chunkWidth = 20
-		this.frameHeight = 10
-		this.frameWidth = 40
-		this.frameLineAnchor = 0  
-		this.frameColumnAnchor = 0
+		this.chunkHeight = 15
+		this.chunkWidth = 50
+
+		this.frameHeight = 30
+		this.frameWidth = 120
+
+		//console.log(Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0))
+		//Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0) 
+		//Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0) 
+
+		//getComputedStyle(document.querySelector('#area'))['font-size']
+
+		this.frameLineAnchor = -1
+		this.frameColumnAnchor = -2
 		this.entities = []
 
 		this.chunk = new Chunk(this, this.chunkHeight, this.chunkWidth)
@@ -313,8 +406,8 @@ class Game {
 		this.frame = new Frame(this.chunk, this.frameHeight, this.frameWidth)
 	}
 
-	createEntity(name, type){
-		let entity = new Entity(name, type)
+	createEntity(name, type, line, column){
+		let entity = new Entity(this.chunk, name, type, line, column)
 		this.entities.push(entity)
 		return entity
 	}
@@ -327,22 +420,15 @@ class Game {
 	}
 
 	start(){
-		this.frame.draw(this.frameLineAnchor, this.frameColumnAnchor)
-		
-		let e0 = this.createEntity('animate', 'e')
-		let el = 5;
-		let ec = 5;
-		setInterval(() => {
-			el += 1
-			ec += 1
-			e0.assignToTile(this.chunk.getTile(el, ec))
-		},500)
 
-		//this.removeEntity(e0)
+		let e0 = this.createEntity('animate', 'e', 0, 0)
+		//e0.setTarget(10, 10, 1000, 0)
+
+		this.frame.draw(this.frameLineAnchor, this.frameColumnAnchor)
 
 		setInterval(() => {
 			this.mainLoop()
-		},100)
+		},50)
 
 		document.addEventListener('keydown', e => {
 			e.preventDefault()
@@ -365,6 +451,9 @@ class Game {
 	}
 
 	mainLoop(){
+		this.entities.forEach(e => {
+			e.updatePosition()
+		})
 		this.frame.update(this.frameLineAnchor, this.frameColumnAnchor)
 	}
 }

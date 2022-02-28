@@ -3,7 +3,7 @@ body {
 }
 #area b {
  font-family: Courier, monospace;
- font-size: 17px;
+ font-size: 30px;
  font-weight: normal;
 }
 
@@ -50,7 +50,7 @@ A partir daqui os cores
 }
 
 .entity {
-    color: pink;
+    color: red;
 }
 
 .bg-green {
