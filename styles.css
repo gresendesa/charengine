@@ -1,8 +1,17 @@
 body {
     background-color: black;
 }
+
+@font-face {
+    font-family: 'ConsoleChars';
+    src: url("fonts/cour.ttf") format("truetype"),
+        url("fonts/courbd.ttf") format("truetype"),
+        url("fonts/courbi.ttf") format("truetype"),
+        url("fonts/couri.ttf") format("truetype")
+}
+
 #area b {
- font-family: Courier, monospace;
+ font-family: 'ConsoleChars';
  font-size: 30px;
  font-weight: normal;
 }
