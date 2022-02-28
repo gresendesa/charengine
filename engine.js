@@ -6,7 +6,7 @@
 class Character {
 	constructor(char, classes) {
 		this.char = char
-		this.classes = classes 
+		this.classes = classes
 	}
 
 	isEqual(character){
@@ -26,11 +26,11 @@ class Character {
  */
 
 class Cell {
-	constructor(frame, character, frameLine, frameColumn){
+	constructor(frame, character, line, column){
 		this.frame = frame
 		this.character = character
-		this.frameLine = frameLine
-		this.frameColumn = frameColumn
+		this.frameLine = line
+		this.frameColumn = column
 		let elementNode = document.createElement('b');
 		let textNode = document.createTextNode(character.char)
 		elementNode.classList.add('cell')
@@ -79,17 +79,28 @@ class Tile {
 		NULL: ':null' //Null means the tile does not exist on chunk
 	}
 
-	constructor(type){
+	constructor(type, chunk, line, column){
 		this.type = type
+		this.line = line
+		this.chunk = chunk
+		this.column = column
 		this.entities = []
 	}
 	
-	pushEntity(entity, priority){
+	//High priority means last item from array
+	getHighPriorityEntity(){
+		if(this.entities.length > 0) return this.entities[this.entities.length - 1]
+		return null
+	}
+
+	pushEntity(entity){
 		this.entities.push(entity)
 	}
 
 	removeEntity(entity){
-
+		this.entities = this.entities.filter(e => {
+			return e !== entity
+		})
 	}
 
 }
@@ -101,7 +112,28 @@ class Tile {
  */
 
 class Entity {
+	constructor(name, type){
+		this.name = name
+		this.type = type
+		this.tile = null
+	}
 
+	updateType(type){
+		this.type = type
+	}
+
+	assignToTile(tile){
+		if(this.tile != null){
+			this.tile.removeEntity(this)
+		}
+		this.tile = tile
+		tile.pushEntity(this)
+	}
+
+	destroy(){
+		this.tile.removeEntity(this)
+		delete this
+	}
 }
 
 /**
@@ -119,7 +151,7 @@ class Chunk {
 		for (let h = 0; h < height; h++) {
 			var line = []
 			for (let w = 0; w < width; w++) {
-				line.push(new Tile(Tile.TYPES.EMPTY))
+				line.push(new Tile(Tile.TYPES.EMPTY, this, h, w))
 			}
 			this.grid.push(line)
 		}
@@ -128,12 +160,13 @@ class Chunk {
 	updateTile(line, column, type){
 		if(line >= this.height) return false
 		if(column >= this.width) return false
-		this.grid[line][column] = new Tile(type)
+		delete this.grid[line][column]
+		this.grid[line][column] = new Tile(type, this, line, column)
 		return true
 	}
 
 	getTile(line, column){
-		let voidTile = new Tile(Tile.TYPES.NULL)
+		let voidTile = new Tile(Tile.TYPES.NULL, this, line, column)
 		let gridLine = this.grid[line]
 		if(!Array.isArray(gridLine)) return voidTile
 		let tile = gridLine[column]
@@ -158,17 +191,27 @@ class Frame {
 		this.chunkColumn = null
 		this.area = document.getElementById('area')
 		this.tileDict = {}
-		this.tileDict[Tile.TYPES.EMPTY] = new Character(' ',['white'])
+		this.tileDict[Tile.TYPES.EMPTY] = new Character(' ',['white', 'bg-green'])
 		this.tileDict[Tile.TYPES.NULL] = new Character('?',['null'])
-		this.tileDict['b'] = new Character('☻',['blue'])
-		this.tileDict['c'] = new Character('-',['white'])
-		this.tileDict['g'] = new Character('*',['white'])
-		this.tileDict['x'] = new Character('♥',['red'])
+		this.tileDict['b'] = new Character('☻',['blue', 'bg-green'])
+		this.tileDict['c'] = new Character('-',['white', 'bg-green'])
+		this.tileDict['g'] = new Character('*',['white', 'bg-green'])
+		this.tileDict['x'] = new Character('♥',['red', 'bg-green'])
+		this.tileDict['e'] = new Character('■',['entity'])
 		this.drawed = false
 	}
 
-	getCharacterTile(tile){
-		return this.tileDict[tile.type]
+	getTileCharacter(tile){
+		let highPriorityEntity = tile.getHighPriorityEntity()
+		let tileCharacter = this.tileDict[tile.type]
+		if(highPriorityEntity != null) {
+			let entityCharacter = this.tileDict[highPriorityEntity.type]
+			let customCharacter = Object.assign(new Character(), tileCharacter);
+			customCharacter.char = entityCharacter.char
+			customCharacter.classes = customCharacter.classes.concat(entityCharacter.classes)
+			return customCharacter
+		}
+		return tileCharacter
 	}
 
 	update(chunkLine, chunkColumn){
@@ -185,7 +228,7 @@ class Frame {
 			for (let column = chunkColumn; column < chunkColumn + this.width; column++) {
 				let gridLine = line - chunkLine;
 				let gridColumn = column - chunkColumn;
-				let chunkCharacter = this.getCharacterTile(this.chunk.getTile(line,column))
+				let chunkCharacter = this.getTileCharacter(this.chunk.getTile(line,column))
 				let currentCell = this.matrix[gridLine][gridColumn]
 				if(!currentCell.character.isEqual(chunkCharacter)){
 					let cell = new Cell(this, chunkCharacter, gridLine, gridColumn)
@@ -212,7 +255,7 @@ class Frame {
 		for (let line = chunkLine; line < chunkLine + this.height; line++) {
 			let matrixLine = []
 			for (let column = chunkColumn; column < chunkColumn + this.width; column++) {
-				let chunkCharacter = this.getCharacterTile(this.chunk.getTile(line,column))
+				let chunkCharacter = this.getTileCharacter(this.chunk.getTile(line,column))
 				let cell = new Cell(this, chunkCharacter, line - chunkLine, column - chunkColumn)
 				let elementNode = cell.getDOMElement()
 				this.area.appendChild(elementNode)
@@ -236,12 +279,13 @@ class Game {
 
 	constructor(){
 
-		this.chunkHeight = 500
-		this.chunkWidth = 500
+		this.chunkHeight = 20
+		this.chunkWidth = 20
 		this.frameHeight = 10
 		this.frameWidth = 40
 		this.frameLineAnchor = 0  
 		this.frameColumnAnchor = 0
+		this.entities = []
 
 		this.chunk = new Chunk(this, this.chunkHeight, this.chunkWidth)
 		for (let i = 0; i < this.chunkHeight; i++) {
@@ -249,16 +293,16 @@ class Game {
 				//this.chunk.updateTile(i, j, 'x')
 				switch (Math.floor(Math.random() * 5)) {
 					case 1:
-						this.chunk.updateTile(i, j, 'b')
+						//this.chunk.updateTile(i, j, 'b')
 						break;
 					case 2:
-						this.chunk.updateTile(i, j, 'c')
+						//this.chunk.updateTile(i, j, 'c')
 						break;
 					case 3:
 						this.chunk.updateTile(i, j, 'g')
 						break;
 					case 4:
-						this.chunk.updateTile(i, j, 'x')
+						//this.chunk.updateTile(i, j, 'x')
 						break;
 					default:
 						this.chunk.updateTile(i, j, Tile.TYPES.EMPTY)
@@ -269,8 +313,33 @@ class Game {
 		this.frame = new Frame(this.chunk, this.frameHeight, this.frameWidth)
 	}
 
+	createEntity(name, type){
+		let entity = new Entity(name, type)
+		this.entities.push(entity)
+		return entity
+	}
+
+	removeEntity(entity){
+		this.entities = this.entities.filter(e => {
+			return e !== entity
+		})
+		entity.destroy()
+	}
+
 	start(){
 		this.frame.draw(this.frameLineAnchor, this.frameColumnAnchor)
+		
+		let e0 = this.createEntity('animate', 'e')
+		let el = 5;
+		let ec = 5;
+		setInterval(() => {
+			el += 1
+			ec += 1
+			e0.assignToTile(this.chunk.getTile(el, ec))
+		},500)
+
+		//this.removeEntity(e0)
+
 		setInterval(() => {
 			this.mainLoop()
 		},100)
