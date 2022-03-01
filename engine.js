@@ -26,7 +26,7 @@ class Character {
  */
 
 class Cell {
-	constructor(frame, character, line, column){
+	constructor(frame, character, line, column, cellHandler){
 		this.frame = frame
 		this.character = character
 		this.frameLine = line
@@ -39,28 +39,11 @@ class Cell {
 		})
 		elementNode.appendChild(textNode)
 		this.domElement = elementNode
-		this.configureListeners()
+		cellHandler(this)
 	}
 
 	getDOMElement(){
 		return this.domElement
-	}
-
-	configureListeners(){
-		this.domElement.addEventListener('mousedown', e => {
-			let chunkLine = this.frame.chunkLine + this.frameLine
-			let chunkColumn = this.frame.chunkColumn + this.frameColumn
-			this.frame.chunk.game.entities.forEach(e => {
-				e.setTarget(chunkLine, chunkColumn, 1000, 0)
-			})
-			//console.log(`CHUNK[line=${chunkLine}, column=${chunkColumn}] FRAME[line=${this.frameLine},column=${this.frameColumn}]`)
-		})
-
-		/*this.domElement.addEventListener('mouseover', e => {
-			let chunkLine = this.frame.chunkLine + this.frameLine
-			let chunkColumn = this.frame.chunkColumn + this.frameColumn
-			//console.log(`CHUNK[line=${chunkLine}, column=${chunkColumn}] FRAME[line=${this.frameLine},column=${this.frameColumn}]`)
-		})*/
 	}
 
 	purge(){
@@ -259,7 +242,7 @@ class Chunk {
  * 	a portion of chunk that must be rendered.
  */
 class Frame {
-	constructor(domContainer, chunk, height, width){
+	constructor(tileDict, domContainer, chunk, height, width, cellHandler){
 		this.chunk = chunk
 		this.matrix = []
 		this.height = height
@@ -267,15 +250,9 @@ class Frame {
 		this.chunkLine = null
 		this.chunkColumn = null
 		this.domContainer = domContainer
-		this.tileDict = {}
-		this.tileDict[Tile.TYPES.EMPTY] = new Character(' ',['white', 'bg-green'])
-		this.tileDict[Tile.TYPES.NULL] = new Character('·',['null'])
-		this.tileDict['b'] = new Character('\u263C',['blue', 'bg-green'])
-		this.tileDict['c'] = new Character('-',['white', 'bg-green'])
-		this.tileDict['g'] = new Character('*',['white', 'bg-green'])
-		this.tileDict['x'] = new Character('♥',['red', 'bg-green'])
-		this.tileDict['e'] = new Character('\u263B',['entity'])
+		this.tileDict = tileDict
 		this.drawed = false
+		this.cellHandler = cellHandler
 	}
 
 	getTileCharacter(tile){
@@ -331,7 +308,7 @@ class Frame {
 				let chunkCharacter = this.getTileCharacter(this.chunk.getTile(line,column))
 				let currentCell = this.getMatrixCell(gridLine, gridColumn)
 				if(!currentCell.character.isEqual(chunkCharacter)){
-					let cell = new Cell(this, chunkCharacter, gridLine, gridColumn)
+					let cell = new Cell(this, chunkCharacter, gridLine, gridColumn, this.cellHandler)
 					let newElementNode = cell.getDOMElement()
 					let lastElementNode = currentCell.getDOMElement()
 					lastElementNode.parentNode.replaceChild(newElementNode, lastElementNode)
@@ -356,7 +333,7 @@ class Frame {
 			let matrixLine = []
 			for (let column = chunkColumn; column < chunkColumn + this.width; column++) {
 				let chunkCharacter = this.getTileCharacter(this.chunk.getTile(line,column))
-				let cell = new Cell(this, chunkCharacter, line - chunkLine, column - chunkColumn)
+				let cell = new Cell(this, chunkCharacter, line - chunkLine, column - chunkColumn, this.cellHandler)
 				let elementNode = cell.getDOMElement()
 				this.domContainer.appendChild(elementNode)
 				matrixLine.push(cell)
@@ -375,14 +352,14 @@ class Frame {
  * Game
  * @description game is where everything is linked.
  */
-class Game {
+class Engine {
 
-	constructor(domContainer){
+	constructor(domContainer, tileDict, height, width, cellHandler){
 
 		this.domContainer = domContainer
 
-		this.chunkHeight = 15
-		this.chunkWidth = 50
+		this.chunkHeight = height
+		this.chunkWidth = width
 
 		this.frameHeight = 1
 		this.frameWidth = 1
@@ -393,34 +370,14 @@ class Game {
 
 		//getComputedStyle(document.querySelector('#area'))['font-size']
 
-		this.frameLineAnchor = -1
-		this.frameColumnAnchor = -2
 		this.entities = []
 
 		this.chunk = new Chunk(this, this.chunkHeight, this.chunkWidth)
-		for (let i = 0; i < this.chunkHeight; i++) {
-			for (let j = 0; j < this.chunkWidth; j++) {
-				//this.chunk.updateTile(i, j, 'x')
-				switch (Math.floor(Math.random() * 5)) {
-					case 1:
-						this.chunk.updateTile(i, j, 'b')
-						break;
-					case 2:
-						//this.chunk.updateTile(i, j, 'c')
-						break;
-					case 3:
-						this.chunk.updateTile(i, j, 'g')
-						break;
-					case 4:
-						//this.chunk.updateTile(i, j, 'x')
-						break;
-					default:
-						this.chunk.updateTile(i, j, Tile.TYPES.EMPTY)
-						break;
-				}
-			}
-		}
-		this.frame = new Frame(this.domContainer, this.chunk, this.frameHeight, this.frameWidth)
+		this.frame = new Frame(tileDict, this.domContainer, this.chunk, this.frameHeight, this.frameWidth, cellHandler)
+	}
+
+	updateTile(line, column, type){
+		this.chunk.updateTile(line, column, type)
 	}
 
 	resize(height, width){
@@ -452,10 +409,10 @@ class Game {
 		entity.destroy()
 	}
 
-	start(){
+	start(line, column){
 
-		let e0 = this.createEntity('animate', 'e', 0, 0)
-		//e0.setTarget(10, 10, 1000, 0)
+		this.frameLineAnchor = line
+		this.frameColumnAnchor = column
 
 		this.frame.draw(this.frameLineAnchor, this.frameColumnAnchor)
 
@@ -492,15 +449,7 @@ class Game {
 	
 }
 
-const domContainer = document.getElementById('area')
-const game = new Game(domContainer)
-
-
-window.addEventListener('load', e => {
-	game.adjustToScreen()
-}) 
-window.addEventListener('resize', e => {
-	game.adjustToScreen()
-})
-
-game.start()
+//export {
+//	Engine,
+//	Character
+//}
