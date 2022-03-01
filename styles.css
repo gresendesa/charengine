@@ -2,6 +2,11 @@ body {
     background-color: black;
 }
 
+#area {
+    height: 97vh;
+    width: 97vw;
+}
+
 @font-face {
     font-family: 'ConsoleChars';
     src: url("fonts/cour.ttf") format("truetype"),

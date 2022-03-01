@@ -259,14 +259,14 @@ class Chunk {
  * 	a portion of chunk that must be rendered.
  */
 class Frame {
-	constructor(chunk, height, width){
+	constructor(domContainer, chunk, height, width){
 		this.chunk = chunk
 		this.matrix = []
 		this.height = height
 		this.width = width
 		this.chunkLine = null
 		this.chunkColumn = null
-		this.area = document.getElementById('area')
+		this.domContainer = domContainer
 		this.tileDict = {}
 		this.tileDict[Tile.TYPES.EMPTY] = new Character(' ',['white', 'bg-green'])
 		this.tileDict[Tile.TYPES.NULL] = new Character('?',['null'])
@@ -297,6 +297,21 @@ class Frame {
 
 	setMatrixCell(cell, line, column){
 		this.matrix[line][column] = cell
+	}
+
+	resize(height, width){
+		this.height = height
+		this.width = width
+		this.drawed = false
+		this.matrix.forEach(line => {
+			line.forEach(cell => {
+				cell.purge()
+				//delete cell
+			})
+		})
+		this.domContainer.innerHTML = ''
+		this.matrix = []
+		this.draw(this.chunkLine, this.chunkColumn)
 	}
 
 	update(chunkLine, chunkColumn){
@@ -343,11 +358,11 @@ class Frame {
 				let chunkCharacter = this.getTileCharacter(this.chunk.getTile(line,column))
 				let cell = new Cell(this, chunkCharacter, line - chunkLine, column - chunkColumn)
 				let elementNode = cell.getDOMElement()
-				this.area.appendChild(elementNode)
+				this.domContainer.appendChild(elementNode)
 				matrixLine.push(cell)
 			}
 			let breakLine = document.createTextNode('\n')
-			this.area.appendChild(breakLine)
+			this.domContainer.appendChild(breakLine)
 			this.matrix.push(matrixLine)
 		}
 		
@@ -362,13 +377,15 @@ class Frame {
  */
 class Game {
 
-	constructor(){
+	constructor(domContainer){
+
+		this.domContainer = domContainer
 
 		this.chunkHeight = 15
 		this.chunkWidth = 50
 
-		this.frameHeight = 30
-		this.frameWidth = 120
+		this.frameHeight = 18
+		this.frameWidth = 40
 
 		//console.log(Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0))
 		//Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0) 
@@ -403,7 +420,23 @@ class Game {
 				}
 			}
 		}
-		this.frame = new Frame(this.chunk, this.frameHeight, this.frameWidth)
+		this.frame = new Frame(this.domContainer, this.chunk, this.frameHeight, this.frameWidth)
+	}
+
+	resize(height, width){
+		this.frameHeight = height
+		this.frameWidth = width
+		this.frame.resize(this.frameHeight, this.frameWidth)
+	}
+
+	adjustToScreen(){
+		let containerHeight = this.domContainer.offsetHeight
+		let containerWidth = this.domContainer.offsetWidth
+		let someCell = this.domContainer.getElementsByTagName('b')[0]
+		let maxLines = Math.floor(containerHeight / someCell.offsetHeight) - 1
+		let maxColumns = Math.floor(containerWidth / someCell.offsetWidth)
+		this.resize(maxLines, maxColumns)
+		console.log(`Adjusted to ${maxLines} lines and ${maxColumns} columns`)
 	}
 
 	createEntity(name, type, line, column){
@@ -456,7 +489,22 @@ class Game {
 		})
 		this.frame.update(this.frameLineAnchor, this.frameColumnAnchor)
 	}
+	
 }
 
-let game = new Game()
+const domContainer = document.getElementById('area')
+const game = new Game(domContainer)
+
+/*requestAnimationFrame(() => {
+	game.adjustToScreen()
+})*/
+
+setTimeout(() => {
+	game.adjustToScreen()
+}, 100)
+
+window.addEventListener('resize', e => {
+	game.adjustToScreen()
+})
+
 game.start()
