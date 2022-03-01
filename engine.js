@@ -384,8 +384,8 @@ class Game {
 		this.chunkHeight = 15
 		this.chunkWidth = 50
 
-		this.frameHeight = 18
-		this.frameWidth = 40
+		this.frameHeight = 1
+		this.frameWidth = 1
 
 		//console.log(Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0))
 		//Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0) 
@@ -495,14 +495,10 @@ class Game {
 const domContainer = document.getElementById('area')
 const game = new Game(domContainer)
 
-/*requestAnimationFrame(() => {
-	game.adjustToScreen()
-})*/
 
-setTimeout(() => {
+window.addEventListener('load', e => {
 	game.adjustToScreen()
-}, 100)
-
+}) 
 window.addEventListener('resize', e => {
 	game.adjustToScreen()
 })
