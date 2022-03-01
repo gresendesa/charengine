@@ -419,25 +419,7 @@ class Engine {
 		setInterval(() => {
 			this.mainLoop()
 		},50)
-
-		document.addEventListener('keydown', e => {
-			e.preventDefault()
-			switch (e.key) {
-				case "ArrowLeft":
-					this.frameColumnAnchor -= 1
-					break;
-				case "ArrowRight":
-					this.frameColumnAnchor += 1
-					break;
-				case "ArrowUp":
-					this.frameLineAnchor -= 1
-					break;
-				case "ArrowDown":
-					this.frameLineAnchor += 1
-					break;
-			}
-		})
-
+		
 	}
 
 	mainLoop(){
