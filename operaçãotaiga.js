@@ -31,7 +31,7 @@ class MousePosition {
 
 const mousePosition = new MousePosition(0, 0)
 const lastMousePosition = new MousePosition(0, 0)
-var isHoldingMouse = false;
+var isHoldingCursor = false;
 
 const cellHandler = cell => {
     cell.domElement.addEventListener('click', e => {
@@ -47,8 +47,8 @@ const cellHandler = cell => {
         e.preventDefault()
     })
 
-    cell.domElement.addEventListener('mouseover', e => {
-        if(isHoldingMouse)  {
+    const cursorOver = e => {
+        if(isHoldingCursor)  {
             let chunkLine = cell.frame.chunkLine + cell.frameLine
             let chunkColumn = cell.frame.chunkColumn + cell.frameColumn 
             mousePosition.update(cell.frameLine, cell.frameColumn)
@@ -61,7 +61,10 @@ const cellHandler = cell => {
             }
         }
         lastMousePosition.update(cell.frameLine, cell.frameColumn)
-    })
+    }
+
+    cell.domElement.addEventListener('mouseover', cursorOver)
+    cell.domElement.addEventListener('touchmove', cursorOver)
 }
 
 const domContainer = document.getElementById('area')
@@ -93,20 +96,28 @@ const engine = new Engine(domContainer, tileDict, 15, 50, cellHandler)
 let e0 = engine.createEntity('animate', 'e', 0, 0)
 //e0.setTarget(10, 10, 1000, 0)
 
+const interactStart = e => {
+    console.log('mouse pressed')
+    isHoldingCursor = true
+}
+
+const interactStop = e => {
+    console.log('mouse released')
+    isHoldingCursor = false
+}
+
 window.addEventListener('load', e => {
 	engine.adjustToScreen()
 }) 
 window.addEventListener('resize', e => {
 	engine.adjustToScreen()
 })
-window.addEventListener('mousedown', e => {
-    console.log('mouse pressed')
-    isHoldingMouse = true
-})
-window.addEventListener('mouseup', e => {
-    console.log('mouse released')
-    isHoldingMouse = false
-})
+
+window.addEventListener('mousedown', interactStart)
+window.addEventListener('mouseup', interactStop)
+
+window.addEventListener("touchstart", interactStart, false);
+window.addEventListener("touchend", interactStop, false);
 
 engine.start(-1, -7)
 

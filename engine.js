@@ -419,7 +419,6 @@ class Engine {
 		setInterval(() => {
 			this.mainLoop()
 		},50)
-		
 	}
 
 	mainLoop(){
