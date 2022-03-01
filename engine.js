@@ -269,7 +269,7 @@ class Frame {
 		this.domContainer = domContainer
 		this.tileDict = {}
 		this.tileDict[Tile.TYPES.EMPTY] = new Character(' ',['white', 'bg-green'])
-		this.tileDict[Tile.TYPES.NULL] = new Character('?',['null'])
+		this.tileDict[Tile.TYPES.NULL] = new Character('·',['null'])
 		this.tileDict['b'] = new Character('\u263C',['blue', 'bg-green'])
 		this.tileDict['c'] = new Character('-',['white', 'bg-green'])
 		this.tileDict['g'] = new Character('*',['white', 'bg-green'])
