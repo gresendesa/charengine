@@ -10,6 +10,11 @@ const tileDict = {
 tileDict[Tile.TYPES.EMPTY] = new Character(' ',['white', 'bg-green'])
 tileDict[Tile.TYPES.NULL] = new Character('·',['null'])
 
+
+const pushMessage = message => {
+    document.getElementById('messages').innerHTML += message + ' * '
+}
+
 class MousePosition {
     constructor(line, column){
         this.line = line
@@ -30,7 +35,7 @@ class MousePosition {
 } 
 
 const mousePosition = new MousePosition(0, 0)
-const lastMousePosition = new MousePosition(0, 0)
+var lastMousePosition = null
 var isHoldingCursor = false;
 
 const cellHandler = cell => {
@@ -49,22 +54,24 @@ const cellHandler = cell => {
 
     const cursorOver = e => {
         if(isHoldingCursor)  {
-            let chunkLine = cell.frame.chunkLine + cell.frameLine
-            let chunkColumn = cell.frame.chunkColumn + cell.frameColumn 
+
+            if(lastMousePosition == null){
+                lastMousePosition = new MousePosition(cell.frameLine, cell.frameColumn)
+            }
             mousePosition.update(cell.frameLine, cell.frameColumn)
             if(!mousePosition.isEqual(lastMousePosition)){
                 let lineDiff = lastMousePosition.line - mousePosition.line
                 let columnDiff = lastMousePosition.column - mousePosition.column
-                //console.log(`moving here! ${lineDiff} ${columnDiff}`)
+                console.log(`moving here! ${lineDiff} ${columnDiff}`)
                 engine.frameLineAnchor += lineDiff
                 engine.frameColumnAnchor += columnDiff
             }
         }
         lastMousePosition.update(cell.frameLine, cell.frameColumn)
+        return true
     }
 
     cell.domElement.addEventListener('mouseover', cursorOver, {passive: true})
-    cell.domElement.addEventListener('touchmove', cursorOver, {passive: true})
 }
 
 const domContainer = document.getElementById('area')
@@ -94,16 +101,52 @@ const engine = new Engine(domContainer, tileDict, 15, 50, cellHandler)
 }*/
 
 let e0 = engine.createEntity('animate', 'e', 0, 0)
-//e0.setTarget(10, 10, 1000, 0)
 
-const interactStart = e => {
-    //console.log('mouse pressed')
-    isHoldingCursor = true
+const getElementFromPoint = (tagName, x, y) => {
+    let elementsFromPoint = document.elementsFromPoint(x, y)
+    for (let j = 0; j < elementsFromPoint.length; j++) {
+        let element = elementsFromPoint[j]
+        if(element.tagName == tagName) return element
+    }
+}
+
+const getFirstTouchedElement = passedEvent => {
+    var touches = passedEvent.changedTouches;
+    for (let i = 0; i < touches.length; i++) {
+        return touches.item(i)
+    }
+    return null
 }
 
 const interactStop = e => {
-    //console.log('mouse released')
+    if(e.type.startsWith('touch')){
+        let touch = getFirstTouchedElement(e)
+        if(touch != null) {
+            let element = getElementFromPoint('B', touch.clientX, touch.clientY)
+            element.dispatchEvent(new Event("mouseover"))
+            //pushMessage('eventStop')
+        }
+    }
     isHoldingCursor = false
+    delete lastMousePosition
+    lastMousePosition = null
+    return true
+}
+
+const interactStart = e => {
+    if(isHoldingCursor){
+        interactStop(e) //Chama a função que desregistra o touch para consertar o bug do navegador
+    }
+    if(e.type.startsWith('touch')){
+        let touch = getFirstTouchedElement(e)
+        if(touch != null) {
+            let element = getElementFromPoint('B', touch.clientX, touch.clientY)
+            element.dispatchEvent(new Event("mouseover"))
+            //pushMessage('eventStart')
+        }
+    }
+    isHoldingCursor = true
+    return true
 }
 
 window.addEventListener('load', e => {
@@ -118,6 +161,16 @@ window.addEventListener('mouseup', interactStop, {passive: true})
 
 window.addEventListener("touchstart", interactStart, {passive: true});
 window.addEventListener("touchend", interactStop, {passive: true});
+window.addEventListener("touchcancel", interactStop, {passive: true});
+window.addEventListener("touchmove", e => {
+    let touch = getFirstTouchedElement(e)
+    if(touch != null) {
+        e.preventDefault()
+        let element = getElementFromPoint('B', touch.clientX, touch.clientY)
+        element.dispatchEvent(new Event("mouseover"))
+    }
+})
+
 
 engine.start(-1, -7)
 
