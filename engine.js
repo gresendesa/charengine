@@ -168,7 +168,7 @@ class Entity {
 	clearTarget(){
 		this.targetLine = null
 		this.targetColumn = null
-		console.log('target clear')
+		//console.log('target clear')
 	}
 
 	assignToTile(line, column){

@@ -63,8 +63,8 @@ const cellHandler = cell => {
         lastMousePosition.update(cell.frameLine, cell.frameColumn)
     }
 
-    cell.domElement.addEventListener('mouseover', cursorOver)
-    cell.domElement.addEventListener('touchmove', cursorOver)
+    cell.domElement.addEventListener('mouseover', cursorOver, {passive: true})
+    cell.domElement.addEventListener('touchmove', cursorOver, {passive: true})
 }
 
 const domContainer = document.getElementById('area')
@@ -97,27 +97,27 @@ let e0 = engine.createEntity('animate', 'e', 0, 0)
 //e0.setTarget(10, 10, 1000, 0)
 
 const interactStart = e => {
-    console.log('mouse pressed')
+    //console.log('mouse pressed')
     isHoldingCursor = true
 }
 
 const interactStop = e => {
-    console.log('mouse released')
+    //console.log('mouse released')
     isHoldingCursor = false
 }
 
 window.addEventListener('load', e => {
 	engine.adjustToScreen()
-}) 
+}, {passive: true}) 
 window.addEventListener('resize', e => {
 	engine.adjustToScreen()
-})
+}, {passive: true})
 
-window.addEventListener('mousedown', interactStart)
-window.addEventListener('mouseup', interactStop)
+window.addEventListener('mousedown', interactStart, {passive: true})
+window.addEventListener('mouseup', interactStop, {passive: true})
 
-window.addEventListener("touchstart", interactStart, false);
-window.addEventListener("touchend", interactStop, false);
+window.addEventListener("touchstart", interactStart, {passive: true});
+window.addEventListener("touchend", interactStop, {passive: true});
 
 engine.start(-1, -7)
 
