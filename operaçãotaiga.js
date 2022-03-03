@@ -54,7 +54,7 @@ const cellHandler = cell => {
         e.preventDefault()
         let chunkLine = cell.frame.chunkLine + cell.frameLine
         let chunkColumn = cell.frame.chunkColumn + cell.frameColumn
-        cell.frame.chunk.game.entities[0].setTarget(chunkLine, chunkColumn, 1000, 0)
+        cell.frame.chunk.game.entities[0].setTarget(chunkLine, chunkColumn, 700, 0)
         //cell.frame.chunk.game.entities.forEach(e => {
         //    e.setTarget(chunkLine, chunkColumn, 1000, 0)
         //})
@@ -85,8 +85,51 @@ const cellHandler = cell => {
     cell.domElement.addEventListener('mouseover', cursorOver, {passive: true})
 }
 
+var shouldIAdjustFrame = false
+const loopHandler = gameEngine => {
+    const entity = gameEngine.entities[0]
+    entity.updatePosition()
+    if((entity.targetLine != null) && (entity.targetColumn != null)){
+        const frameLineAnchorDiffToEntity = entity.tile.line - gameEngine.frameLineAnchor
+        const frameColumnAnchorDiffToEntity = entity.tile.column - gameEngine.frameColumnAnchor
+        if(!shouldIAdjustFrame){
+            if(frameLineAnchorDiffToEntity > Math.floor((gameEngine.frameHeight / 4) * 3)){
+                //console.log('preciso descer')
+                shouldIAdjustFrame = true
+            } else if(frameLineAnchorDiffToEntity < Math.floor(gameEngine.frameHeight / 4)){
+                //console.log('preciso subir')
+                shouldIAdjustFrame = true
+            }
+            if(frameColumnAnchorDiffToEntity > Math.floor((gameEngine.frameWidth / 4) * 3)){
+                //console.log('preciso ir pra a direita')
+                shouldIAdjustFrame = true
+            } else if(frameColumnAnchorDiffToEntity < Math.floor(gameEngine.frameWidth / 4)){
+                //console.log('preciso ir pra a esquerda')
+                shouldIAdjustFrame = true
+            }
+        } else {
+            if((frameLineAnchorDiffToEntity == Math.floor(gameEngine.frameHeight / 2)) && (frameColumnAnchorDiffToEntity == Math.floor(gameEngine.frameWidth / 2))){
+                shouldIAdjustFrame = false
+                //console.log('cancelei')
+            } else {
+                if(frameLineAnchorDiffToEntity > Math.floor(gameEngine.frameHeight / 2)) {
+                    gameEngine.frameLineAnchor += 1
+                } else if(frameLineAnchorDiffToEntity < Math.floor(gameEngine.frameHeight / 2)) {
+                    gameEngine.frameLineAnchor -= 1
+                }
+                if(frameColumnAnchorDiffToEntity > Math.floor(gameEngine.frameWidth / 2)) {
+                    gameEngine.frameColumnAnchor += 1
+                } else if(frameColumnAnchorDiffToEntity < Math.floor(gameEngine.frameWidth / 2)) {
+                    gameEngine.frameColumnAnchor -= 1
+                }
+            }
+        }
+    }
+    gameEngine.frame.update(gameEngine.frameLineAnchor, gameEngine.frameColumnAnchor)
+}
+
 const domContainer = document.getElementById('area')
-const engine = new Engine(domContainer, tileDict, 300, 500, cellHandler)
+const engine = new Engine(domContainer, tileDict, 300, 500, cellHandler, loopHandler)
 let e0 = engine.createEntity('animate', 'e', 0, 0)
 
 

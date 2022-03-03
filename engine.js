@@ -367,7 +367,7 @@ class Frame {
  */
 class Engine {
 
-	constructor(domContainer, tileDict, height, width, cellHandler){
+	constructor(domContainer, tileDict, height, width, cellHandler, loopHandler){
 
 		this.domContainer = domContainer
 
@@ -376,6 +376,7 @@ class Engine {
 
 		this.frameHeight = 1
 		this.frameWidth = 1
+		this.loopHandler = loopHandler
 
 		//console.log(Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0))
 		//Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0) 
@@ -435,10 +436,7 @@ class Engine {
 	}
 
 	mainLoop(){
-		this.entities.forEach(e => {
-			e.updatePosition()
-		})
-		this.frame.update(this.frameLineAnchor, this.frameColumnAnchor)
+		this.loopHandler(this)
 	}
 	
 }
