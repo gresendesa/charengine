@@ -106,7 +106,7 @@ class Tile {
  */
 
 class Entity {
-	constructor(chunk, name, type, line, column){
+	constructor(chunk, name, type, line, column, velocityHandler){
 		this.name = name
 		this.type = type
 		//this.tile = null
@@ -116,6 +116,7 @@ class Entity {
 		this.assignToTile(line, column)
 		this.clearTarget()
 		this.counter = 0
+		this.velocityHandler = velocityHandler
 	}
 
 	updateType(type){
@@ -136,8 +137,9 @@ class Entity {
 	}
 
 	updatePosition(){
-		let { line, column, velocity, acceleration } = this.getTarget()
-		if((line != null) && (column != null) && (velocity > 0)){
+		let { line, column } = this.getTarget()
+		this.velocity = this.velocityHandler(this) 
+		if((line != null) && (column != null)){
 			let canMove = this.shouldItMove()
 			if(canMove) {
 				let diffTargetLine = this.targetLine - this.tile.line
@@ -159,19 +161,17 @@ class Entity {
 		}
 	}
 
-	setTarget(line, column, velocity, acceleration){
+	setTarget(line, column){
 		this.targetLine = line
 		this.targetColumn = column
-		this.velocity = velocity
-		this.acceleration = acceleration
+		this.velocity = 0
+		this.acceleration = 0
 	}
 
 	getTarget(){
 		return {
 			line: this.targetLine,
-			column: this.targetColumn,
-			velocity: this.velocity,
-			acceleration: this.acceleration
+			column: this.targetColumn
 		}
 	}
 
@@ -190,6 +190,10 @@ class Entity {
 		this.tile = tile
 		tile.pushEntity(this)
 		return true
+	}
+
+	setVelocity(velocity){
+		this.velocity = velocity
 	}
 
 	destroy(){
@@ -410,8 +414,8 @@ class Engine {
 		console.log(`Adjusted to ${maxLines} lines and ${maxColumns} columns`)
 	}
 
-	createEntity(name, type, line, column){
-		let entity = new Entity(this.chunk, name, type, line, column)
+	createEntity(name, type, line, column, velocityHandler){
+		let entity = new Entity(this.chunk, name, type, line, column, velocityHandler)
 		this.entities.push(entity)
 		return entity
 	}

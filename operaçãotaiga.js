@@ -54,7 +54,7 @@ const cellHandler = cell => {
         e.preventDefault()
         let chunkLine = cell.frame.chunkLine + cell.frameLine
         let chunkColumn = cell.frame.chunkColumn + cell.frameColumn
-        cell.frame.chunk.game.entities[0].setTarget(chunkLine, chunkColumn, 700, 0)
+        cell.frame.chunk.game.entities[0].setTarget(chunkLine, chunkColumn)
         //cell.frame.chunk.game.entities.forEach(e => {
         //    e.setTarget(chunkLine, chunkColumn, 1000, 0)
         //})
@@ -130,7 +130,13 @@ const loopHandler = gameEngine => {
 
 const domContainer = document.getElementById('area')
 const engine = new Engine(domContainer, tileDict, 300, 500, cellHandler, loopHandler)
-let e0 = engine.createEntity('animate', 'e', 0, 0)
+const velocityHandler = entity => {
+    let velocity = 700;
+    if(entity.tile.category == Tile.CATEGORIES.LIQUID) velocity = 50;
+    if(entity.tile.category == Tile.CATEGORIES.OVERLAID) velocity = 300;
+    return velocity;
+}
+let e0 = engine.createEntity('animate', 'e', 0, 0, velocityHandler)
 
 
 //engine.updateTile(10, 10, 'lake')
