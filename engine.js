@@ -65,11 +65,19 @@ class Tile {
 		NULL: ':null' //Null means the tile does not exist on chunk
 	}
 
-	constructor(type, chunk, line, column){
+	static CATEGORIES = {
+		DEFAULT: ':default',
+		LIQUID: ':liquid',
+		OVERLAID: ':overlaid',
+		SOLID: ':solid'
+	}
+
+	constructor(type, chunk, line, column, category){
 		this.type = type
 		this.line = line
 		this.chunk = chunk
 		this.column = column
+		this.category = category
 		this.entities = []
 	}
 	
@@ -142,8 +150,10 @@ class Entity {
 					if(diffTargetLine < 0) lineChange = -1;
 					if(diffTargetColumn > 0) columnChange = 1;
 					if(diffTargetColumn < 0) columnChange = -1;
-					moved = this.assignToTile(this.tile.line + lineChange, this.tile.column + columnChange)
-				}
+					let targetTile = this.chunk.getTile(this.tile.line + lineChange, this.tile.column + columnChange)
+					if(targetTile.category != Tile.CATEGORIES.SOLID){
+						moved = this.assignToTile(this.tile.line + lineChange, this.tile.column + columnChange)
+					}				}
 				if(!moved) this.clearTarget()
 			}
 		}
@@ -203,7 +213,7 @@ class Chunk {
 		for (let h = 0; h < height; h++) {
 			var line = []
 			for (let w = 0; w < width; w++) {
-				line.push(new Tile(Tile.TYPES.EMPTY, this, h, w))
+				line.push(new Tile(Tile.TYPES.EMPTY, this, h, w, Tile.CATEGORIES.DEFAULT))
 			}
 			this.grid.push(line)
 		}
@@ -217,16 +227,19 @@ class Chunk {
 		return true
 	}
 
-	updateTile(line, column, type){
+	updateTile(line, column, type, category){
 		if(line >= this.height) return false
 		if(column >= this.width) return false
-		delete this.grid[line][column]
-		this.grid[line][column] = new Tile(type, this, line, column)
-		return true
+		try {
+			delete this.grid[line][column]
+			this.grid[line][column] = new Tile(type, this, line, column, category)
+		} finally {
+			return true
+		}
 	}
 
 	getTile(line, column){
-		let voidTile = new Tile(Tile.TYPES.NULL, this, line, column)
+		let voidTile = new Tile(Tile.TYPES.NULL, this, line, column, Tile.CATEGORIES.DEFAULT)
 		let gridLine = this.grid[line]
 		if(!Array.isArray(gridLine)) return voidTile
 		let tile = gridLine[column]
@@ -258,7 +271,7 @@ class Frame {
 	getTileCharacter(tile){
 		let highPriorityEntity = tile.getHighPriorityEntity()
 		let tileCharacter = this.tileDict[tile.type]
-		if(highPriorityEntity != null) {
+		if((highPriorityEntity != null) && (tile.category != Tile.CATEGORIES.OVERLAID)) {
 			let entityCharacter = this.tileDict[highPriorityEntity.type]
 			let customCharacter = Object.assign(new Character(), tileCharacter);
 			customCharacter.char = entityCharacter.char
@@ -376,8 +389,8 @@ class Engine {
 		this.frame = new Frame(tileDict, this.domContainer, this.chunk, this.frameHeight, this.frameWidth, cellHandler)
 	}
 
-	updateTile(line, column, type){
-		this.chunk.updateTile(line, column, type)
+	updateTile(line, column, type, category){
+		this.chunk.updateTile(line, column, type, category)
 	}
 
 	resize(height, width){

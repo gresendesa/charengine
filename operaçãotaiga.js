@@ -5,7 +5,18 @@ const tileDict = {
     c: new Character('-',['white', 'bg-green']),
     g: new Character('*',['white', 'bg-green']),
     x: new Character('♥',['red', 'bg-green']),
-    e: new Character('\u263B',['entity'])
+    e: new Character('\u263B',['entity']),
+    lake: new Character('█',['blue', 'bg-blue']),
+    lakeborder: new Character('▒',['blue', 'bg-green']),
+    rock0: new Character('·',['red', 'bg-green']),
+    rock1: new Character('·',['black', 'bg-green']),
+    treeCrown: new Character('▲',['crown', 'bg-green']),
+    treeTrunk: new Character('│',['brown', 'bg-green']),
+    solidMountain: new Character('█',['gray', 'bg-gray']),
+    mountainBorder: new Character('█',['black', 'bg-black']),
+    mountainShadow: new Character('█',['black', 'bg-black']),
+    solidSnow: new Character('█',['white', 'bg-gray']),
+    solidSnowBorder: new Character('▒',['white', 'bg-gray'])
 }
 tileDict[Tile.TYPES.EMPTY] = new Character(' ',['white', 'bg-green'])
 tileDict[Tile.TYPES.NULL] = new Character('·',['null'])
@@ -43,9 +54,10 @@ const cellHandler = cell => {
         e.preventDefault()
         let chunkLine = cell.frame.chunkLine + cell.frameLine
         let chunkColumn = cell.frame.chunkColumn + cell.frameColumn
-        cell.frame.chunk.game.entities.forEach(e => {
-            e.setTarget(chunkLine, chunkColumn, 1000, 0)
-        })
+        cell.frame.chunk.game.entities[0].setTarget(chunkLine, chunkColumn, 1000, 0)
+        //cell.frame.chunk.game.entities.forEach(e => {
+        //    e.setTarget(chunkLine, chunkColumn, 1000, 0)
+        //})
     })
 
     cell.domElement.addEventListener('contextmenu', e => {
@@ -54,7 +66,6 @@ const cellHandler = cell => {
 
     const cursorOver = e => {
         if(isHoldingCursor)  {
-
             if(lastMousePosition == null){
                 lastMousePosition = new MousePosition(cell.frameLine, cell.frameColumn)
             }
@@ -62,12 +73,12 @@ const cellHandler = cell => {
             if(!mousePosition.isEqual(lastMousePosition)){
                 let lineDiff = lastMousePosition.line - mousePosition.line
                 let columnDiff = lastMousePosition.column - mousePosition.column
-                console.log(`moving here! ${lineDiff} ${columnDiff}`)
+                //console.log(`moving here! ${lineDiff} ${columnDiff}`)
                 engine.frameLineAnchor += lineDiff
                 engine.frameColumnAnchor += columnDiff
             }
         }
-        lastMousePosition.update(cell.frameLine, cell.frameColumn)
+        if(lastMousePosition != null) lastMousePosition.update(cell.frameLine, cell.frameColumn)
         return true
     }
 
@@ -75,32 +86,23 @@ const cellHandler = cell => {
 }
 
 const domContainer = document.getElementById('area')
-const engine = new Engine(domContainer, tileDict, 15, 50, cellHandler)
-
-/*for (let i = 0; i < engine.chunkHeight; i++) {
-    for (let j = 0; j < engine.chunkWidth; j++) {
-        //this.chunk.updateTile(i, j, 'x')
-        switch (Math.floor(Math.random() * 5)) {
-            case 1:
-                engine.updateTile(i, j, 'b')
-                break;
-            case 2:
-                //this.updateTile(i, j, 'c')
-                break;
-            case 3:
-                engine.updateTile(i, j, 'g')
-                break;
-            case 4:
-                //this.updateTile(i, j, 'x')
-                break;
-            default:
-                engine.updateTile(i, j, Tile.TYPES.EMPTY)
-                break;
-        }
-    }
-}*/
-
+const engine = new Engine(domContainer, tileDict, 300, 500, cellHandler)
 let e0 = engine.createEntity('animate', 'e', 0, 0)
+
+
+//engine.updateTile(10, 10, 'lake')
+//engine.updateTile(10, 11, 'lake')
+
+let mapGenerator = new MapGenerator(engine, tileDict)
+mapGenerator.generateLakes(150, 500)
+mapGenerator.generateLakeBorders()
+mapGenerator.generateMountains(100, 1000)
+mapGenerator.generateMountainBorders()
+mapGenerator.generateSnow(10000, 10)
+mapGenerator.generateRocks(12000)
+mapGenerator.generateTrees(1000)
+mapGenerator.generateForests(10, 1000)
+
 
 const getElementFromPoint = (tagName, x, y) => {
     let elementsFromPoint = document.elementsFromPoint(x, y)
@@ -134,8 +136,10 @@ const interactStop = e => {
 }
 
 const interactStart = e => {
+    e.preventDefault()
     if(isHoldingCursor){
         interactStop(e) //Chama a função que desregistra o touch para consertar o bug do navegador
+        return
     }
     if(e.type.startsWith('touch')){
         let touch = getFirstTouchedElement(e)
@@ -156,16 +160,16 @@ window.addEventListener('resize', e => {
 	engine.adjustToScreen()
 }, {passive: true})
 
-window.addEventListener('mousedown', interactStart, {passive: true})
+window.addEventListener('mousedown', interactStart)
 window.addEventListener('mouseup', interactStop, {passive: true})
 
-window.addEventListener("touchstart", interactStart, {passive: true});
+window.addEventListener("touchstart", interactStart);
 window.addEventListener("touchend", interactStop, {passive: true});
 window.addEventListener("touchcancel", interactStop, {passive: true});
 window.addEventListener("touchmove", e => {
+    e.preventDefault()
     let touch = getFirstTouchedElement(e)
     if(touch != null) {
-        e.preventDefault()
         let element = getElementFromPoint('B', touch.clientX, touch.clientY)
         element.dispatchEvent(new Event("mouseover"))
     }
@@ -188,6 +192,9 @@ document.addEventListener('keydown', e => {
             break;
         case "ArrowDown":
             engine.frameLineAnchor += 1
+            break;
+        case " ":
+            
             break;
     }
 })

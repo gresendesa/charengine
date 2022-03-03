@@ -1,6 +1,7 @@
 body {
     background-color: black;
     color: red;
+    cursor: none;
 }
 
 #area {
@@ -31,16 +32,17 @@ body {
     user-select: none;          /* Likely future */
 
     /* TRANSIÇÃO DE COR */
-    /*-o-transition:.7s;
-    -ms-transition:.7s;
-    -moz-transition:.7s;
-    -webkit-transition:.7s;*/
+    /*-o-transition:.2s;
+    -ms-transition:.2s;
+    -moz-transition:.2s;
+    -webkit-transition:.2s;
     /* ...and now for the proper property */
-    /*transition:.7s;*/
+    /*transition:.2s;*/
 }
 
 .cell:hover {
-    background-color: yellow;
+    background-color: rgba(128, 128, 128, 0.76);
+    hyphenate-character: 'f';
 }
 
 /*
@@ -64,6 +66,22 @@ A partir daqui os cores
     background-color: #2D2D30;
 }
 
+.gray {
+    color: lightslategray;
+}
+
+.black {
+    color: black
+}
+
+.crown {
+    color: rgb(52, 184, 52)
+}
+
+.brown {
+    color: brown
+}
+
 .entity {
     color: lightblue;
 }
@@ -76,3 +94,14 @@ A partir daqui os cores
     background-color: orange;
 }
 
+.bg-blue {
+    background-color: blue;
+}
+
+.bg-gray {
+    color: lightslategray;
+}
+
+.bg-black {
+    background-color: black;
+}
