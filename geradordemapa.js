@@ -21,7 +21,9 @@ class MapGenerator {
             var lakeCellLine = Math.floor(Math.random() * (this.gameEngine.chunkHeight + 1))
             var lakeCellColumn = Math.floor(Math.random() * (this.gameEngine.chunkWidth + 1))
             var lakeCells = 0
+            var antiLoopCounter = 0
             do {
+                if(antiLoopCounter > 10) break
                 switch (Math.floor(Math.random() * 3)) {
                     case 0:
                         lakeCellLine += 1
@@ -42,7 +44,10 @@ class MapGenerator {
                     case 2:
                         break;
                 }
-                if(!this.isPositionValid(lakeCellLine, lakeCellColumn)) continue
+                if(!this.isPositionValid(lakeCellLine, lakeCellColumn)){
+                    antiLoopCounter += 1
+                    continue
+                }
                 this.gameEngine.updateTile(lakeCellLine, lakeCellColumn, 'lake', Tile.CATEGORIES.LIQUID)
                 lakeCells += 1
             } while(lakeCells < lakeDimension)
@@ -111,10 +116,15 @@ class MapGenerator {
     generateTrees(quantity){
         for (let i = 0; i < quantity; i++) {
             if(line == 0) continue
+            var antiLoopCounter = 0;
             while (true) {
+                if(antiLoopCounter > 10) break
                 var line = Math.floor(Math.random() * (this.gameEngine.chunkHeight + 1))
                 var column = Math.floor(Math.random() * (this.gameEngine.chunkWidth + 1))
-                if (!this.generateTree(line, column)) continue
+                if (!this.generateTree(line, column)){
+                    antiLoopCounter += 1
+                    continue
+                }
                 break
             }
             
@@ -169,7 +179,9 @@ class MapGenerator {
             var mountainCellLine = Math.floor(Math.random() * (this.gameEngine.chunkHeight + 1))
             var mountainCellColumn = Math.floor(Math.random() * (this.gameEngine.chunkWidth + 1))
             var mountainCells = 0
+            var antiLoopCounter = 0
             do {
+                if(antiLoopCounter > 10) break
                 switch (Math.floor(Math.random() * 3)) {
                     case 0:
                         mountainCellLine += 1
@@ -191,7 +203,10 @@ class MapGenerator {
                         break;
                 }
                 
-                if(!this.isPositionValid(mountainCellLine, mountainCellColumn)) continue
+                if(!this.isPositionValid(mountainCellLine, mountainCellColumn)) {
+                    antiLoopCounter += 1
+                    continue
+                }
                 this.gameEngine.updateTile(mountainCellLine, mountainCellColumn, 'solidMountain', Tile.CATEGORIES.SOLID)
                 
                 mountainCells += 1
@@ -222,7 +237,9 @@ class MapGenerator {
             var snowCellLine = Math.floor(Math.random() * (this.gameEngine.chunkHeight + 1))
             var snowCellColumn = Math.floor(Math.random() * (this.gameEngine.chunkWidth + 1))
             var snowCells = 0
+            var antiLoopCounter = 0
             do {
+                if(antiLoopCounter > 10) break
                 switch (Math.floor(Math.random() * 3)) {
                     case 0:
                         snowCellLine += 1
@@ -243,10 +260,11 @@ class MapGenerator {
                     case 2:
                         break;
                 }
-                
-                
-                if(!this.isPositionValid(snowCellLine, snowCellColumn)) continue
-
+            
+                if(!this.isPositionValid(snowCellLine, snowCellColumn)){
+                    antiLoopCounter += 1
+                    continue
+                }
                 let tile = this.gameEngine.chunk.getTile(snowCellLine, snowCellColumn)
                 if(tile.type == 'solidMountain') this.gameEngine.updateTile(snowCellLine, snowCellColumn, 'solidSnow', Tile.CATEGORIES.SOLID)
                 
