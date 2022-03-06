@@ -1,9 +1,17 @@
+* {
+    box-sizing: border-box;
+    margin: 0; 
+    padding: 0;
+}
+
 body {
     color: red;
+    height: 100%; 
+    overflow: hidden
 }
 
 #canvas {
-    width: 98vw;
-    height: 94vh;
-    border:1px solid #d3d3d3;
+    margin: 0; 
+    padding: 0;
+    /*border:1px solid #d3d3d3;*/
 }
