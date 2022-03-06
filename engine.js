@@ -99,12 +99,18 @@ class Tile {
 
 }
 
+class EntityTarget {
+	constructor(line, column){
+		this.line = line
+		this.column = column
+	}
+}
+
 /**
  * Entity
  * 
  * @description is a description of a entity that lives it a tile
  */
-
 class Entity {
 	constructor(chunk, name, type, line, column, velocityHandler){
 		this.name = name
@@ -114,7 +120,7 @@ class Entity {
 		this.velocity = 0 //it may be something between 0 and 1000
 		this.acceleration = 0 //it may be something between 0 and 1000
 		this.assignToTile(line, column)
-		this.clearTarget()
+		this.targets = []
 		this.counter = 0
 		this.velocityHandler = velocityHandler
 	}
@@ -137,13 +143,14 @@ class Entity {
 	}
 
 	updatePosition(){
-		let { line, column } = this.getTarget()
+		if(!this.targets.length) return
+		let { line, column } = this.getCurrentTarget()
 		this.velocity = this.velocityHandler(this) 
 		if((line != null) && (column != null)){
 			let canMove = this.shouldItMove()
 			if(canMove) {
-				let diffTargetLine = this.targetLine - this.tile.line
-				let diffTargetColumn = this.targetColumn - this.tile.column
+				let diffTargetLine = line - this.tile.line
+				let diffTargetColumn = column - this.tile.column
 				let moved = false
 				if((diffTargetLine != 0) || (diffTargetColumn != 0)){
 					let lineChange = 0;
@@ -155,30 +162,29 @@ class Entity {
 					let targetTile = this.chunk.getTile(this.tile.line + lineChange, this.tile.column + columnChange)
 					if(targetTile.category != Tile.CATEGORIES.SOLID){
 						moved = this.assignToTile(this.tile.line + lineChange, this.tile.column + columnChange)
-					}				}
-				if(!moved) this.clearTarget()
+					}
+				}
+				if(!moved) this.popCurrentTarget()
 			}
 		}
 	}
 
-	setTarget(line, column){
-		this.targetLine = line
-		this.targetColumn = column
-		this.velocity = 0
-		this.acceleration = 0
+	pushTarget(line, column){
+		let target = new EntityTarget(line, column)
+		this.targets.push(target)
 	}
 
-	getTarget(){
-		return {
-			line: this.targetLine,
-			column: this.targetColumn
-		}
+	getCurrentTarget(){
+		if(!this.targets.length) return null
+		return this.targets[0]
 	}
 
-	clearTarget(){
-		this.targetLine = null
-		this.targetColumn = null
-		//console.log('target clear')
+	clearTargets(){
+		this.targets.splice(0,this.targets.length)
+	}
+
+	popCurrentTarget(){
+		return this.targets.shift()
 	}
 
 	assignToTile(line, column){
@@ -428,7 +434,6 @@ class Engine {
 	}
 
 	start(line, column){
-
 		this.frameLineAnchor = line
 		this.frameColumnAnchor = column
 

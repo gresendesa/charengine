@@ -1,5 +1,7 @@
 //import { Engine, Character } from "./engine";
 
+const worker = new Worker('pathfinderWorker.js');
+
 const tileDict = {
     b: new Character('\u263C',['blue', 'bg-green']),
     c: new Character('-',['white', 'bg-green']),
@@ -54,7 +56,11 @@ const cellHandler = cell => {
         e.preventDefault()
         let chunkLine = cell.frame.chunkLine + cell.frameLine
         let chunkColumn = cell.frame.chunkColumn + cell.frameColumn
-        cell.frame.chunk.game.entities[0].setTarget(chunkLine, chunkColumn)
+        let playerEntity = cell.frame.chunk.game.entities[0]
+        //playerEntity.clearTargets()
+        playerEntity.pushTarget(chunkLine, chunkColumn)
+        let message = new PathFindRequest(playerEntity.tile, cell.frame.chunk.getTile(cell.frame.chunkLine, cell.frame.chunkColumn))
+        worker.postMessage(message); // Send data to our worker.
         //cell.frame.chunk.game.entities.forEach(e => {
         //    e.setTarget(chunkLine, chunkColumn, 1000, 0)
         //})
@@ -89,7 +95,7 @@ var shouldIAdjustFrame = false
 const loopHandler = gameEngine => {
     const entity = gameEngine.entities[0]
     entity.updatePosition()
-    if((entity.targetLine != null) && (entity.targetColumn != null)){
+    if(entity.targets.length > 0){
         const frameLineAnchorDiffToEntity = entity.tile.line - gameEngine.frameLineAnchor
         const frameColumnAnchorDiffToEntity = entity.tile.column - gameEngine.frameColumnAnchor
         if(!shouldIAdjustFrame){
@@ -138,6 +144,11 @@ const velocityHandler = entity => {
 }
 let e0 = engine.createEntity('animate', 'e', 0, 0, velocityHandler)
 
+
+worker.addEventListener('message', function(e) {
+    console.log('Worker said: ', e.data);
+  }, false);
+worker.postMessage('Hello World'); // Send data to our worker.
 
 //engine.updateTile(10, 10, 'lake')
 //engine.updateTile(10, 11, 'lake')
